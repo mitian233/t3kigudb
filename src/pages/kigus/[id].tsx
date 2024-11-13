@@ -26,6 +26,7 @@ import { useUser } from "@clerk/nextjs";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18nConfig from "../../../next-i18next.config.mjs";
+import { getLocaleName } from "~/utils/locale";
 
 export const getServerSideProps = async ({ locale }: { locale: string }) => ({
   props: {
@@ -42,7 +43,7 @@ const Kigu: NextPage = () => {
   const router = useRouter();
   const id = router.query.id as string;
 
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
 
   const { data: kiguData } = api.kigu.getById.useQuery(id, {
     staleTime: Infinity,
@@ -141,13 +142,14 @@ const Kigu: NextPage = () => {
                             <PhotoCard
                               key={mask.id}
                               picSrc={mask.picUrl}
-                              title={`${mask.character.name}`}
+                              title={`${getLocaleName(
+                                mask.character,
+                                i18n.language
+                              )}`}
                               subTitle={
                                 mask.maker?.name ?? t("unidentified-maker")
                               }
-                              onClick={() => {
-                                void router.push(`/masks/${mask.id}`);
-                              }}
+                              href={`/masks/${mask.id}`}
                             />
                           );
                         })

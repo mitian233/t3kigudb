@@ -18,6 +18,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { useTranslation } from "next-i18next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import nextI18nConfig from "../../../next-i18next.config.mjs";
+import { getLocaleName } from "~/utils/locale";
 
 export const getServerSideProps = async ({ locale }: { locale: string }) => ({
   props: {
@@ -35,7 +36,7 @@ const Media: NextPage = () => {
   }, 500);
 
   const router = useRouter();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [query, setQuery] = useState("");
   const id = router.query.id as string;
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -56,7 +57,7 @@ const Media: NextPage = () => {
 
   const { data: characterSearchData, isFetching: isCharacterFetching } =
     api.character.getByName.useQuery(
-      { name: query, originId: parseInt(id) },
+      { name: query, originId: parseInt(id), locale: i18n.language },
       {
         enabled: query.length > 0,
       }
@@ -66,6 +67,10 @@ const Media: NextPage = () => {
     staleTime: Infinity,
     cacheTime: Infinity,
   });
+
+  const localeOriginName = originData
+    ? getLocaleName(originData, i18n.language)
+    : "";
 
   const handleObserver: IntersectionObserverCallback = ([entry]) => {
     if (entry?.isIntersecting && hasNextPage && !isFetching) {
@@ -80,11 +85,9 @@ const Media: NextPage = () => {
           <PhotoCard
             key={char.id}
             picSrc={char.picUrl}
-            title={char.name}
-            subTitle={char.origin.name}
-            onClick={() => {
-              void router.push(`/characters/${char.id}`);
-            }}
+            title={getLocaleName(char, i18n.language)}
+            subTitle={localeOriginName}
+            href={`/characters/${char.id}`}
           />
         ));
       }
@@ -94,11 +97,9 @@ const Media: NextPage = () => {
           <PhotoCard
             key={char.id}
             picSrc={char.picUrl}
-            title={char.name}
-            subTitle={char.origin.name}
-            onClick={() => {
-              void router.push(`/characters/${char.id}`);
-            }}
+            title={getLocaleName(char, i18n.language)}
+            subTitle={localeOriginName}
+            href={`/characters/${char.id}`}
           />
         ))
       );
@@ -131,7 +132,7 @@ const Media: NextPage = () => {
               <BreadcrumbLink href="/media">{t("media")}</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbItem>
-              <BreadcrumbLink>{originData?.name}</BreadcrumbLink>
+              <BreadcrumbLink>{localeOriginName}</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
         </div>
@@ -140,7 +141,7 @@ const Media: NextPage = () => {
           <input
             className="h-full w-full rounded-lg p-2 outline-none"
             autoFocus
-            placeholder={`Search for characters from ${originData?.name}`}
+            placeholder={`Search for characters from ${localeOriginName}`}
             onChange={(e) => debounced(e.target.value)}
           ></input>
         </div>
